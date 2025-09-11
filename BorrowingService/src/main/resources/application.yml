@@ -1,2 +1,13 @@
 server:
   port: 8082
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/borrowing_db
+    username: user
+    password: password
+    driver-class-name: org.postgresql.Driver
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    enabled: true

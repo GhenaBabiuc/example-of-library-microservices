@@ -1,100 +1,77 @@
 package org.example.booksservice.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.example.booksservice.model.dto.BookDTO;
+import org.example.booksservice.model.dto.BookRecord;
+import org.example.booksservice.model.dto.CreateBookRequest;
+import org.example.booksservice.model.dto.UpdateBookRequest;
 import org.example.booksservice.service.BookService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/books")
+@RequestMapping("/books")
 @RequiredArgsConstructor
 public class BookController {
 
     private final BookService bookService;
 
+    @GetMapping("/{id}")
+    public ResponseEntity<BookRecord> getBookById(@PathVariable Long id) {
+        BookRecord book = bookService.getBookById(id);
+
+        return ResponseEntity.ok(book);
+    }
+
+    @GetMapping("/exist/{id}")
+    public ResponseEntity<Boolean> existsById(@PathVariable Long id) {
+        return ResponseEntity.ok(bookService.existsById(id));
+    }
+
     @GetMapping
-    public ResponseEntity<List<BookDTO>> getAllBooks() {
-        List<BookDTO> books = bookService.getAllBooks();
+    public ResponseEntity<Page<BookRecord>> getAllBooks(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDirection) {
+        Sort sort = Sort.by(sortDirection.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<BookRecord> books = bookService.getAllBooks(pageable);
+
         return ResponseEntity.ok(books);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<BookDTO> getBookById(@PathVariable Long id) {
-        try {
-            BookDTO book = bookService.getBookById(id);
-            return ResponseEntity.ok(book);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    @GetMapping("/isbn/{isbn}")
-    public ResponseEntity<BookDTO> getBookByIsbn(@PathVariable String isbn) {
-        try {
-            BookDTO book = bookService.getBookByIsbn(isbn);
-            return ResponseEntity.ok(book);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
     @PostMapping
-    public ResponseEntity<BookDTO> createBook(@RequestBody BookDTO bookDTO) {
-        try {
-            BookDTO createdBook = bookService.createBook(bookDTO);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdBook);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
+    public ResponseEntity<BookRecord> createBook(@Valid @RequestBody CreateBookRequest createBookRequest) {
+        BookRecord createdBook = bookService.createBook(createBookRequest);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdBook);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<BookDTO> updateBook(@PathVariable Long id, @RequestBody BookDTO bookDTO) {
-        try {
-            BookDTO updatedBook = bookService.updateBook(id, bookDTO);
-            return ResponseEntity.ok(updatedBook);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
+    public ResponseEntity<BookRecord> updateBook(@PathVariable Long id, @Valid @RequestBody UpdateBookRequest updateBookRequest) {
+        BookRecord updatedBook = bookService.updateBook(id, updateBookRequest);
+
+        return ResponseEntity.ok(updatedBook);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBook(@PathVariable Long id) {
-        try {
-            bookService.deleteBook(id);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
+        bookService.deleteBook(id);
 
-    @GetMapping("/search")
-    public ResponseEntity<List<BookDTO>> searchBooks(@RequestParam String title) {
-        List<BookDTO> books = bookService.searchBooks(title);
-        return ResponseEntity.ok(books);
-    }
-
-    @GetMapping("/by-language")
-    public ResponseEntity<List<BookDTO>> getBooksByLanguage(@RequestParam String language) {
-        List<BookDTO> books = bookService.getBooksByLanguage(language);
-        return ResponseEntity.ok(books);
-    }
-
-    @GetMapping("/by-publisher")
-    public ResponseEntity<List<BookDTO>> getBooksByPublisher(@RequestParam String publisher) {
-        List<BookDTO> books = bookService.getBooksByPublisher(publisher);
-        return ResponseEntity.ok(books);
-    }
-
-    @GetMapping("/by-author/{authorId}")
-    public ResponseEntity<List<BookDTO>> getBooksByAuthor(@PathVariable Long authorId) {
-        List<BookDTO> books = bookService.getBooksByAuthor(authorId);
-        return ResponseEntity.ok(books);
+        return ResponseEntity.noContent().build();
     }
 }

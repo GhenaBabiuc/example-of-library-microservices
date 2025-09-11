@@ -1,114 +1,79 @@
 package org.example.booksservice.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.example.booksservice.mapper.AuthorMapper;
 import org.example.booksservice.model.Author;
-import org.example.booksservice.model.Book;
-import org.example.booksservice.model.dto.AuthorDTO;
+import org.example.booksservice.model.dto.AuthorRecord;
+import org.example.booksservice.model.dto.CreateAuthorRequest;
+import org.example.booksservice.model.dto.UpdateAuthorRequest;
 import org.example.booksservice.repository.AuthorRepository;
-import org.example.booksservice.repository.BookRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthorService {
 
     private final AuthorRepository authorRepository;
-    private final BookRepository bookRepository;
+    private final AuthorMapper authorMapper;
 
-    public List<AuthorDTO> getAllAuthors() {
-        return authorRepository.findAll().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
-    public AuthorDTO getAuthorById(Long id) {
+    public AuthorRecord getAuthorById(Long id) {
+        log.debug("Fetching author with id: {}", id);
         Author author = authorRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Author not found with id: " + id));
-        return convertToDTO(author);
+
+        return authorMapper.toRecord(author);
+    }
+
+    public boolean existsById(Long id) {
+        return authorRepository.existsById(id);
+    }
+
+    public Page<AuthorRecord> getAllAuthors(Pageable pageable) {
+        log.debug("Fetching all authors with pagination: {}", pageable);
+        Page<Author> authors = authorRepository.findAll(pageable);
+
+        return authors.map(authorMapper::toRecord);
     }
 
     @Transactional
-    public AuthorDTO createAuthor(AuthorDTO authorDTO) {
-        Author author = convertToEntity(authorDTO);
+    public AuthorRecord createAuthor(CreateAuthorRequest createAuthorRequest) {
+        log.debug("Creating author with name: {} {}", createAuthorRequest.firstName(), createAuthorRequest.lastName());
+
+        Author author = authorMapper.toEntity(createAuthorRequest);
         Author savedAuthor = authorRepository.save(author);
-        return convertToDTO(savedAuthor);
+        log.info("Created author with id: {}", savedAuthor.getId());
+
+        return authorMapper.toRecord(savedAuthor);
     }
 
     @Transactional
-    public AuthorDTO updateAuthor(Long id, AuthorDTO authorDTO) {
+    public AuthorRecord updateAuthor(Long id, UpdateAuthorRequest updateAuthorRequest) {
+        log.debug("Updating author with id: {}", id);
+
         Author existingAuthor = authorRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Author not found with id: " + id));
 
-        existingAuthor.setFirstName(authorDTO.getFirstName());
-        existingAuthor.setLastName(authorDTO.getLastName());
-        existingAuthor.setBirthDate(authorDTO.getBirthDate());
-        existingAuthor.setBiography(authorDTO.getBiography());
-        existingAuthor.setNationality(authorDTO.getNationality());
-
-        if (authorDTO.getBookIds() != null && !authorDTO.getBookIds().isEmpty()) {
-            Set<Book> books = new HashSet<>(bookRepository.findAllById(authorDTO.getBookIds()));
-            existingAuthor.setBooks(books);
-        }
-
+        authorMapper.updateEntity(updateAuthorRequest, existingAuthor);
         Author updatedAuthor = authorRepository.save(existingAuthor);
-        return convertToDTO(updatedAuthor);
+        log.info("Updated author with id: {}", updatedAuthor.getId());
+
+        return authorMapper.toRecord(updatedAuthor);
     }
 
     @Transactional
     public void deleteAuthor(Long id) {
+        log.debug("Deleting author with id: {}", id);
+
         if (!authorRepository.existsById(id)) {
             throw new RuntimeException("Author not found with id: " + id);
         }
+
         authorRepository.deleteById(id);
-    }
-
-    public List<AuthorDTO> searchAuthors(String name) {
-        return authorRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(name, name)
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
-    public List<AuthorDTO> getAuthorsByNationality(String nationality) {
-        return authorRepository.findByNationalityIgnoreCase(nationality)
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
-    private AuthorDTO convertToDTO(Author author) {
-        AuthorDTO dto = new AuthorDTO();
-        dto.setId(author.getId());
-        dto.setFirstName(author.getFirstName());
-        dto.setLastName(author.getLastName());
-        dto.setBirthDate(author.getBirthDate());
-        dto.setBiography(author.getBiography());
-        dto.setNationality(author.getNationality());
-        dto.setBookIds(author.getBooks().stream()
-                .map(Book::getId)
-                .collect(Collectors.toSet()));
-        return dto;
-    }
-
-    private Author convertToEntity(AuthorDTO dto) {
-        Author author = new Author();
-        author.setFirstName(dto.getFirstName());
-        author.setLastName(dto.getLastName());
-        author.setBirthDate(dto.getBirthDate());
-        author.setBiography(dto.getBiography());
-        author.setNationality(dto.getNationality());
-
-        if (dto.getBookIds() != null && !dto.getBookIds().isEmpty()) {
-            Set<Book> books = new HashSet<>(bookRepository.findAllById(dto.getBookIds()));
-            author.setBooks(books);
-        }
-
-        return author;
+        log.info("Deleted author with id: {}", id);
     }
 }
