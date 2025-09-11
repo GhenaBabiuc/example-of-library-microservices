@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  users-db:
+    image: postgres:15
+    container_name: users-db-container
+    environment:
+      POSTGRES_DB: users_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5431:5432"
+    volumes:
+      - ./users_data:/var/lib/postgresql/data
+    networks:
+      - library-network
+
+  books-db:
+    image: postgres:15
+    container_name: books-db-container
+    environment:
+      POSTGRES_DB: books_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./books_data:/var/lib/postgresql/data
+    networks:
+      - library-network
+
+  borrowing-db:
+    image: postgres:15
+    container_name: borrowing-db-container
+    environment:
+      POSTGRES_DB: borrowing_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./borrowing_data:/var/lib/postgresql/data
+    networks:
+      - library-network
+
+volumes:
+  users_data:
+  books_data:
+  borrowing_data:
+
+networks:
+  library-network:
+    driver: bridge
