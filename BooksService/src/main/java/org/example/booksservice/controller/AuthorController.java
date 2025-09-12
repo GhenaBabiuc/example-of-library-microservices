@@ -1,6 +1,8 @@
 package org.example.booksservice.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.example.booksservice.model.dto.AuthorRecord;
 import org.example.booksservice.model.dto.CreateAuthorRequest;
@@ -43,8 +45,8 @@ public class AuthorController {
 
     @GetMapping
     public ResponseEntity<Page<AuthorRecord>> getAllAuthors(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(50) int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDirection) {
         Sort sort = Sort.by(sortDirection.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy);
