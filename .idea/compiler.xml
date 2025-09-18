@@ -3,6 +3,13 @@
   <component name="CompilerConfiguration">
     <annotationProcessing>
       <profile default="true" name="Default" enabled="true" />
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="EurekaServer" />
+        <module name="ApiGateway" />
+      </profile>
       <profile name="Annotation profile for UsersService" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
@@ -16,15 +23,6 @@
         <module name="UsersService" />
         <module name="BooksService" />
       </profile>
-      <profile name="Annotation profile for ApiGateway" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.38/lombok-1.18.38.jar" />
-        </processorPath>
-        <module name="ApiGateway" />
-      </profile>
     </annotationProcessing>
   </component>
   <component name="JavacSettings">
@@ -32,6 +30,7 @@
       <module name="ApiGateway" options="-parameters" />
       <module name="BooksService" options="-parameters" />
       <module name="BorrowingService" options="-parameters" />
+      <module name="EurekaServer" options="-parameters" />
       <module name="UsersService" options="-parameters" />
     </option>
   </component>
