@@ -9,8 +9,9 @@
         <outputRelativeToContentRoot value="true" />
         <module name="EurekaServer" />
         <module name="ApiGateway" />
+        <module name="NotificationService" />
       </profile>
-      <profile name="Annotation profile for UsersService" enabled="true">
+      <profile name="Annotation profile for BorrowingService" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
@@ -31,6 +32,7 @@
       <module name="BooksService" options="-parameters" />
       <module name="BorrowingService" options="-parameters" />
       <module name="EurekaServer" options="-parameters" />
+      <module name="NotificationService" options="-parameters" />
       <module name="UsersService" options="-parameters" />
     </option>
   </component>

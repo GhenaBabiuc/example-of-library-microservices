@@ -1,0 +1,36 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: notification-service
+
+  kafka:
+    bootstrap-servers: localhost:29092
+    consumer:
+      group-id: notification-service-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+  mail:
+    host: smtp.yandex.ru
+    port: 587
+    username: example@yandex.ru
+    password: example
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
+
+notification:
+  kafka:
+    topic: borrowing-events
+  email:
+    from: example@yandex.ru
+    enabled: true

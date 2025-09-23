@@ -58,6 +58,40 @@ services:
       timeout: 5s
       retries: 5
 
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka-container
+    ports:
+      - "29092:29092"
+    environment:
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 1
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: PLAINTEXT://kafka:9092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    networks:
+      - library-network
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui-container
+    depends_on:
+      - kafka
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    networks:
+      - library-network
+
   eureka-server:
     build:
       context: ./EurekaServer
@@ -122,6 +156,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=user
       - SPRING_DATASOURCE_PASSWORD=password
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     depends_on:
       borrowing-db:
         condition: service_healthy
@@ -153,6 +188,26 @@ services:
         condition: service_started
       borrowing-service:
         condition: service_started
+    networks:
+      - library-network
+    restart: unless-stopped
+
+  notification-service:
+    build:
+      context: ./NotificationService
+      dockerfile: Dockerfile
+    container_name: notification-service-container
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_KAFKA_CONSUMER_GROUP_ID=notification-service-group
+      - SPRING_MAIL_HOST=smtp.yandex.ru
+      - SPRING_MAIL_PORT=587
+      - SPRING_MAIL_USERNAME=example@yandex.ru
+      - SPRING_MAIL_PASSWORD=example
+      - NOTIFICATION_EMAIL_FROM=example@yandex.ru
+      - NOTIFICATION_EMAIL_ENABLED=true
     networks:
       - library-network
     restart: unless-stopped

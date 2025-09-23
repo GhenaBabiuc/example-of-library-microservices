@@ -2,9 +2,11 @@ package org.example.borrowingservice.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.borrowingservice.kafka.BorrowingEventProducer;
 import org.example.borrowingservice.mapper.BorrowingMapper;
 import org.example.borrowingservice.model.BorrowStatus;
 import org.example.borrowingservice.model.Borrowing;
+import org.example.borrowingservice.model.BorrowingEvent;
 import org.example.borrowingservice.model.dto.BorrowingRecord;
 import org.example.borrowingservice.model.dto.CreateBorrowingRequest;
 import org.example.borrowingservice.model.dto.UpdateBorrowingRequest;
@@ -24,6 +26,7 @@ public class BorrowingService {
     private final BorrowingRepository borrowingRepository;
     private final BorrowingMapper borrowingMapper;
     private final ExternalService externalService;
+    private final BorrowingEventProducer eventProducer;
 
     public BorrowingRecord getBorrowingById(Long id) {
         log.debug("Fetching borrowing with id: {}", id);
@@ -90,6 +93,8 @@ public class BorrowingService {
         Borrowing savedBorrowing = borrowingRepository.save(borrowing);
         log.info("Created borrowing with id: {}", savedBorrowing.getId());
 
+        sendBorrowingEvent(savedBorrowing, "BOOK_BORROWED");
+
         return borrowingMapper.toRecord(savedBorrowing);
     }
 
@@ -125,6 +130,8 @@ public class BorrowingService {
         Borrowing updatedBorrowing = borrowingRepository.save(borrowing);
         log.info("Book returned for borrowing with id: {}", updatedBorrowing.getId());
 
+        sendBorrowingEvent(updatedBorrowing, "BOOK_RETURNED");
+
         return borrowingMapper.toRecord(updatedBorrowing);
     }
 
@@ -138,5 +145,32 @@ public class BorrowingService {
 
         borrowingRepository.deleteById(id);
         log.info("Deleted borrowing with id: {}", id);
+    }
+
+    private void sendBorrowingEvent(Borrowing borrowing, String eventType) {
+        try {
+            var userInfo = externalService.getUserInfo(borrowing.getUserId());
+            var bookInfo = externalService.getBookInfo(borrowing.getBookId());
+
+            BorrowingEvent event = BorrowingEvent.builder()
+                    .eventType(eventType)
+                    .borrowingId(borrowing.getId())
+                    .userId(borrowing.getUserId())
+                    .userEmail(userInfo != null ? userInfo.email() : null)
+                    .userFirstName(userInfo != null ? userInfo.firstName() : null)
+                    .userLastName(userInfo != null ? userInfo.lastName() : null)
+                    .bookId(borrowing.getBookId())
+                    .bookTitle(bookInfo != null ? bookInfo.title() : null)
+                    .bookIsbn(bookInfo != null ? bookInfo.isbn() : null)
+                    .borrowDate(borrowing.getBorrowDate())
+                    .dueDate(borrowing.getDueDate())
+                    .returnDate(borrowing.getReturnDate())
+                    .notes(borrowing.getNotes())
+                    .build();
+
+            eventProducer.sendBorrowingEvent(event);
+        } catch (Exception e) {
+            log.error("Failed to send borrowing event for borrowing id: {}", borrowing.getId(), e);
+        }
     }
 }
