@@ -56,6 +56,20 @@ public class BookController {
         return ResponseEntity.ok(books);
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<Page<BookRecord>> searchBooksByTitle(
+            @RequestParam String title,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(50) int size,
+            @RequestParam(defaultValue = "title") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDirection) {
+        Sort sort = Sort.by(sortDirection.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<BookRecord> books = bookService.searchBooksByTitle(title, pageable);
+
+        return ResponseEntity.ok(books);
+    }
+
     @PostMapping
     public ResponseEntity<BookRecord> createBook(@Valid @RequestBody CreateBookRequest createBookRequest) {
         BookRecord createdBook = bookService.createBook(createBookRequest);

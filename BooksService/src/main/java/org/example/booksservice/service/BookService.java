@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -42,6 +43,18 @@ public class BookService {
     public Page<BookRecord> getAllBooks(Pageable pageable) {
         log.debug("Fetching all books with pagination: {}", pageable);
         Page<Book> books = bookRepository.findAll(pageable);
+
+        return books.map(bookMapper::toRecord);
+    }
+
+    public Page<BookRecord> searchBooksByTitle(String title, Pageable pageable) {
+        log.debug("Searching books by title containing: {}", title);
+
+        if (!StringUtils.hasText(title)) {
+            throw new RuntimeException("Title search parameter cannot be empty");
+        }
+
+        Page<Book> books = bookRepository.findByTitleContainingIgnoreCase(title, pageable);
 
         return books.map(bookMapper::toRecord);
     }
