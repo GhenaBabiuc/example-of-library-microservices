@@ -102,11 +102,11 @@ services:
     networks:
       - library-network
 
-  users-service:
+  users-service-1:
     build:
       context: ./UsersService
       dockerfile: Dockerfile
-    container_name: users-service-container
+    container_name: users-service-1-container
     ports:
       - "8083:8083"
     environment:
@@ -114,6 +114,10 @@ services:
       - SPRING_DATASOURCE_USERNAME=user
       - SPRING_DATASOURCE_PASSWORD=password
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SERVER_PORT=8083
+      - EUREKA_INSTANCE_INSTANCE_ID=users-service:${HOSTNAME}:8083
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+      - SPRING_APPLICATION_NAME=users-service
     depends_on:
       users-db:
         condition: service_healthy
@@ -123,11 +127,36 @@ services:
       - library-network
     restart: unless-stopped
 
-  books-service:
+  users-service-2:
+    build:
+      context: ./UsersService
+      dockerfile: Dockerfile
+    container_name: users-service-2-container
+    ports:
+      - "8093:8093"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://users-db:5432/users_db
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SERVER_PORT=8093
+      - EUREKA_INSTANCE_INSTANCE_ID=users-service:${HOSTNAME}:8093
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+      - SPRING_APPLICATION_NAME=users-service
+    depends_on:
+      users-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    networks:
+      - library-network
+    restart: unless-stopped
+
+  books-service-1:
     build:
       context: ./BooksService
       dockerfile: Dockerfile
-    container_name: books-service-container
+    container_name: books-service-1-container
     ports:
       - "8081:8081"
     environment:
@@ -135,6 +164,10 @@ services:
       - SPRING_DATASOURCE_USERNAME=user
       - SPRING_DATASOURCE_PASSWORD=password
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SERVER_PORT=8081
+      - EUREKA_INSTANCE_INSTANCE_ID=books-service:${HOSTNAME}:8081
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+      - SPRING_APPLICATION_NAME=books-service
     depends_on:
       books-db:
         condition: service_healthy
@@ -144,11 +177,36 @@ services:
       - library-network
     restart: unless-stopped
 
-  borrowing-service:
+  books-service-2:
+    build:
+      context: ./BooksService
+      dockerfile: Dockerfile
+    container_name: books-service-2-container
+    ports:
+      - "8091:8091"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://books-db:5432/books_db
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SERVER_PORT=8091
+      - EUREKA_INSTANCE_INSTANCE_ID=books-service:${HOSTNAME}:8091
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+      - SPRING_APPLICATION_NAME=books-service
+    depends_on:
+      books-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    networks:
+      - library-network
+    restart: unless-stopped
+
+  borrowing-service-1:
     build:
       context: ./BorrowingService
       dockerfile: Dockerfile
-    container_name: borrowing-service-container
+    container_name: borrowing-service-1-container
     ports:
       - "8082:8082"
     environment:
@@ -157,14 +215,48 @@ services:
       - SPRING_DATASOURCE_PASSWORD=password
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SERVER_PORT=8082
+      - EUREKA_INSTANCE_INSTANCE_ID=borrowing-service:${HOSTNAME}:8082
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+      - SPRING_APPLICATION_NAME=borrowing-service
     depends_on:
       borrowing-db:
         condition: service_healthy
       eureka-server:
         condition: service_started
-      users-service:
+      users-service-1:
         condition: service_started
-      books-service:
+      books-service-1:
+        condition: service_started
+    networks:
+      - library-network
+    restart: unless-stopped
+
+  borrowing-service-2:
+    build:
+      context: ./BorrowingService
+      dockerfile: Dockerfile
+    container_name: borrowing-service-2-container
+    ports:
+      - "8092:8092"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://borrowing-db:5432/borrowing_db
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SERVER_PORT=8092
+      - EUREKA_INSTANCE_INSTANCE_ID=borrowing-service:${HOSTNAME}:8092
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+      - SPRING_APPLICATION_NAME=borrowing-service
+    depends_on:
+      borrowing-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+      users-service-1:
+        condition: service_started
+      books-service-1:
         condition: service_started
     networks:
       - library-network
@@ -182,11 +274,17 @@ services:
     depends_on:
       eureka-server:
         condition: service_started
-      users-service:
+      users-service-1:
         condition: service_started
-      books-service:
+      users-service-2:
         condition: service_started
-      borrowing-service:
+      books-service-1:
+        condition: service_started
+      books-service-2:
+        condition: service_started
+      borrowing-service-1:
+        condition: service_started
+      borrowing-service-2:
         condition: service_started
     networks:
       - library-network
